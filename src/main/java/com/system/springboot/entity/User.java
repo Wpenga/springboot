@@ -77,11 +77,17 @@ public class User {
 
     @ApiModelProperty("打卡信息")
     @TableField(exist = false)
-//    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private List<Health> health;
-//    @ApiModelProperty("签到时间")
-//    @Alias("签到时间")
-//    private String signTime;
 
+    @ApiModelProperty("签到时间")
+    @Alias("签到时间")
+    @TableField(exist = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone="GMT+8")
+    private Date punchDate;
+
+    @ApiModelProperty("是否发烧（0:未发烧，1:发烧）")
+    @Alias("是否发烧（0:未发烧，1:发烧）")
+    @TableField(exist = false)
+    private Boolean isFever;
 
 }

@@ -39,28 +39,35 @@
         <result column="create_time" property="createTime" />
         <result column="avatar_url" property="avatarUrl" />
         <result column="role" property="role" />
-<!--        <collection property="health" javaType="java.util.ArrayList" ofType="com.system.springboot.entity.Health">-->
-<!--            <result column="punch_date" property="punchDate" />-->
-<!--            <result column="is_fever" property="isFever" />-->
-<!--        </collection>-->
-<!--        <collection property="stuCourses" javaType="java.util.ArrayList" ofType="com.system.springboot.entity.Health">-->
-<!--            <result column="stuCourseName" property="name" />-->
-<!--            <result column="stuScore" property="score" />-->
-<!--        </collection>-->
+        <!--        <collection property="health" javaType="java.util.ArrayList" ofType="com.system.springboot.entity.Health">-->
+        <!--            <result column="punch_date" property="punchDate" />-->
+        <!--            <result column="is_fever" property="isFever" />-->
+        <!--        </collection>-->
+        <!--        <collection property="stuCourses" javaType="java.util.ArrayList" ofType="com.system.springboot.entity.Health">-->
+        <!--            <result column="stuCourseName" property="name" />-->
+        <!--            <result column="stuScore" property="score" />-->
+        <!--        </collection>-->
     </resultMap>
 
     <select id="findPage" resultMap="pageUser">
---         select u.*,h.*
---         from sys_user u
---         left join stu_health h
---         on u.username = h.username
-        SELECT u.*, COUNT(u.username) as num, h.is_fever,h.punch_date
+--         SELECT u.*, COUNT(u.username) as num, h.is_fever,h.punch_date
+--         FROM sys_user u
+--         LEFT JOIN stu_health h ON u.username = h.username
+        SELECT u.*, h.is_fever, h.punch_date
         FROM sys_user u
-        LEFT JOIN stu_health h ON u.username = h.username
---         WHERE u.username = 'admin'
-        GROUP BY u.username, h.username
-        ORDER BY u.id
+        LEFT JOIN (
+            SELECT *
+            FROM stu_health
+            WHERE id IN (
+                SELECT MAX(id)
+                FROM stu_health
+                GROUP BY username
+            )
+        ) h ON u.username = h.username
         <where>
+            <if test = "role != null and role !=''">
+                and u.role like concat('%',#{role},'%')
+            </if>
             <if test = "username != null and username !=''">
                 and u.username like concat('%',#{username},'%')
             </if>
@@ -76,6 +83,30 @@
             <if test="phone != null and phone != ''">
                 and u.phone like concat('%', #{phone} ,'%')
             </if>
+        </where>
+--         GROUP BY u.username, h.username
+        ORDER BY u.id
+    </select>
+<!-- 导出 学生数据表-->
+    <select id="getStuExportList" resultType="com.system.springboot.entity.User">
+        SELECT u.username,u.nickname,u.phone,u.sex,u.address,u.email, h.is_fever, h.punch_date
+        FROM sys_user u
+                 LEFT JOIN (
+            SELECT *
+            FROM stu_health
+            WHERE id IN (
+                SELECT MAX(id)
+                FROM stu_health
+                GROUP BY username
+            )
+        ) h ON u.username = h.username
+        <where>
+            <if test = "is_fever != null and is_fever !=''">
+                and h.is_fever = #{is_fever}
+            </if>
+<!--            <if test = "username != null and username !=''">-->
+<!--                and h.punch_date = #{punch_date},'%')-->
+<!--            </if>-->
         </where>
     </select>
 

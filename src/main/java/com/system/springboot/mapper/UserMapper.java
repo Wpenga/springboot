@@ -13,9 +13,13 @@ public interface UserMapper extends BaseMapper<User> {
     //更新密码
     @Update("update sys_user set password = #{newPassword} where username = #{username} and password = #{password}")
     int updatePassword(UserPasswordDTO userPasswordDTO);
+    //分页 联表 多条件 模糊 查询
+    Page<User> findPage(Page<User> page,@Param("role") String role, @Param("username") String username,@Param("address") String address,@Param("nickname") String nickname,@Param("email") String email,@Param("phone")String phone);
 
-    Page<User> findPage(Page<User> page, @Param("username") String username,@Param("address") String address,@Param("nickname") String nickname,@Param("email") String email,@Param("phone")String phone);
-/*
+
+    //获取未签到学生表
+    List<User> getStuExportList(@Param("is_fever") Boolean is_fever);
+    /*
     //查找所有数据
     @Select("select * from stu_user")
     List<User> findAll();

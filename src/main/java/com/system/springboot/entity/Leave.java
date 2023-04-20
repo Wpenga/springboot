@@ -53,6 +53,8 @@ public class Leave implements Serializable {
       @ApiModelProperty("申请时间（记录学生申请时间）")
       private LocalDateTime applyTime;
 
+
+      //昵称 手机号 用户表获取
       @TableField(exist = false)
       private String nickname;
       @TableField(exist = false)

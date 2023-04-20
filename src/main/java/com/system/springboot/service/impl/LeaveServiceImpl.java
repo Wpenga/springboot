@@ -34,7 +34,7 @@ public class LeaveServiceImpl extends ServiceImpl<LeaveMapper, Leave> implements
     }
 
     @Override
-    public Page findPage(Page<Health> page, String username, String nickname) {
+    public Page findPage(Page<Leave> page, String username, String nickname) {
         return leaveMapper.findPage(page,username,nickname);
     }
 }

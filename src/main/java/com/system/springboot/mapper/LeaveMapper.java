@@ -26,5 +26,5 @@ public interface LeaveMapper extends BaseMapper<Leave> {
     List<Leave> selectLeaveAndUsername(@Param("username") String username);
 
 
-    Page<Leave> findPage(Page<Health> page, String username, String nickname);
+    Page<Leave> findPage(Page<Leave> page,@Param("username") String username,@Param("nickname") String nickname);
 }

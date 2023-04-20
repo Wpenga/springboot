@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.system.springboot.controller.dto.UserDTO;
 import com.system.springboot.controller.dto.UserPasswordDTO;
 import com.system.springboot.entity.User;
+
+import java.util.List;
+
 /*
 * 服务类
 * 定义各种接口，具体实现在实现类中
@@ -18,7 +21,9 @@ public interface IUserService extends IService<User> {
     //修改密码
     void updatePassword(UserPasswordDTO userPasswordDTO);
 
-    Page findPage(Page<User> page, String username, String address, String nickname, String email, String phone);
+    Page findPage(Page<User> page, String role, String username, String address, String nickname, String email, String phone);
+
+//    List<User> getStuInfo();
 
 
 //    Object selectAllStudentAndRecord(String username);

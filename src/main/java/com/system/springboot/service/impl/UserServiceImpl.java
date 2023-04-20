@@ -84,10 +84,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         }
     }
 
-
     @Override
-    public Page findPage(Page<User> page, String username, String address, String nickname,String email, String phone) {
-        return userMapper.findPage(page,username,address,nickname,email,phone);
+    public Page findPage(Page<User> page,String role ,String username, String address, String nickname,String email, String phone) {
+        return userMapper.findPage(page,role,username,address,nickname,email,phone);
     }
 
     /**

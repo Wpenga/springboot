@@ -21,5 +21,5 @@ public interface ILeaveService extends IService<Leave> {
 
     List<Leave> getByUsername(String username);
 
-    Page findPage(Page<Health> page, String username, String nickname);
+    Page findPage(Page<Leave> page, String username, String nickname);
 }

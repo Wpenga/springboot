@@ -3,18 +3,21 @@ package com.system.springboot.controller;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.system.springboot.common.Result;
 import com.system.springboot.entity.Health;
 import com.system.springboot.entity.User;
 import com.system.springboot.mapper.HealthMapper;
 import com.system.springboot.service.IHealthService;
 import com.system.springboot.service.IUserService;
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import javax.jws.soap.SOAPBinding;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/echarts")
+@Api(tags = "数据处理")
 public class EchartsController {
 
     @Resource
@@ -40,8 +44,10 @@ public class EchartsController {
     //获取统计数据
     @GetMapping("/getdata")
     public Result getdata(){
-        List<User> list1 = userService.list();
-        int total = list1.size();                       //总用户数
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("role","ROLE_STUDENT");
+        List<User> list1 = userService.list(queryWrapper);
+        int total = list1.size();                       //学生户数
         List<Health> list2 = healthMapper.getisSign();
         DateTime currentDate  = new DateTime();         // 获取当前时间
 //        System.out.println("当前时间"+currentDate);
@@ -54,7 +60,7 @@ public class EchartsController {
                 signCount++;
             }
         }
-        int isFeverCount = healthMapper.isFeverCount();
+        int isFeverCount = healthMapper.isFeverCount();  //发烧人数
         Map<String, Object> map = new HashMap<>();
         map.put("total", total);
         map.put("signCount", signCount);
@@ -86,17 +92,10 @@ public class EchartsController {
                 q4 += 1;
             }
         }
-//        for (User user : list){
-//            Date createTime = user.getCreateTime();
-//            Quarter quarter = DateUtil.quarterEnum(createTime);
-//            switch (quarter){
-//                case Q1: q1 += 1; break;
-//                case Q2: q2 += 1; break;
-//                case Q3: q3 += 1; break;
-//                case Q4: q4 += 1; break;
-//                default: break;
-//            }
-//        }
         return Result.success(CollUtil.newArrayList( q1, q2, q3, q4));
     }
+//    @GetMapping("/studentinfo")
+//    public Result getStuInfo(){
+////        return Result.success(userService.getStuInfo());
+//    }
 }
