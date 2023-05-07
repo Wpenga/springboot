@@ -1,10 +1,17 @@
 package com.system.springboot.service.impl;
 
+import cn.hutool.crypto.SecureUtil;
 import cn.hutool.log.Log;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.system.springboot.common.RoleEnum;
 import com.system.springboot.controller.dto.UserPasswordDTO;
 import com.system.springboot.service.IUserService;
 import com.system.springboot.common.Constants;
@@ -19,9 +26,11 @@ import com.system.springboot.service.IMenuService;
 import com.system.springboot.utils.TokenUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.sql.Wrapper;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,10 +50,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
     @Resource
     private IMenuService menuService;
 
+    @Resource
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public UserDTO login(UserDTO userDTO) {     //登录逻辑判断
-        User one = getUserInfo(userDTO);
+        // 对用户密码进行md5加密
+//        userDTO.setPassword(SecureUtil.md5(userDTO.getPassword()));
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, userDTO.getUsername());
+        User isExit = getOne(wrapper);
+        if(isExit == null){
+            throw new ServiceException(Constants.CODE_700, "账号不存在，请注册");
+        }
+        User one = getUserInfo(userDTO);  //账号密码验证
         //非空继续判断
         if (one != null) {
             //根据登录信息copy数据库对应的全部信息 one复制给userDTO
@@ -65,21 +84,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
 
     @Override
     public User register(UserDTO userDTO) {       //注册逻辑操作
-        User one = getUserInfo(userDTO);
+//        userDTO.setPassword(SecureUtil.md5(userDTO.getPassword()));
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, userDTO.getUsername());
+        User one = getOne(wrapper);
         if(one == null){
             one = new User();
             BeanUtils.copyProperties(userDTO,one);
+            //默认注册的用户角色 = 学生
+            one.setRole(RoleEnum.ROLE_STUDENT.toString());
+            one.setPassword(passwordEncoder.encode(one.getPassword()));
+            if (one.getNickname() == null) {
+                one.setNickname(one.getUsername());  //姓名默认学号
+            }
             save(one);
         } else {
-            throw new ServiceException(Constants.CODE_600, "用户名或密码错误");
+            throw new ServiceException(Constants.CODE_600, "用户已存在，请直接登录");
         }
         return one;
     }
 
     @Override
     public void updatePassword(UserPasswordDTO userPasswordDTO) {   //更新密码
-        int update = userMapper.updatePassword(userPasswordDTO);
-        if (update < 1) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, userPasswordDTO.getUsername());// 使用 LambdaQueryWrapper 构造查询条件
+        User user = getOne(wrapper);
+        int rows = 0;
+        if(user != null && passwordEncoder.matches(userPasswordDTO.getPassword(),user.getPassword())){
+            user.setPassword(passwordEncoder.encode(userPasswordDTO.getNewPassword()));
+//            userPasswordDTO.setNewPassword(passwordEncoder.encode(userPasswordDTO.getNewPassword()));
+//            System.out.println(userPasswordDTO.getNewPassword());
+            //更新1  Parameter 'username' not found. Available parameters are [ew, param1, et, param2]
+//            boolean row = new LambdaUpdateChainWrapper<User>(userMapper)
+//                    .eq(User::getUsername,userPasswordDTO.getUsername())
+//                    .set(User::getPassword,userPasswordDTO.getNewPassword())
+//                    .update();
+            //更新2
+//            update(
+//                Wrappers.<User>lambdaUpdate()
+//                    .eq(User::getUsername,userPasswordDTO.getUsername())
+//                    .set(User::getPassword,userPasswordDTO.getNewPassword())
+//            );
+//            LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+//            lambdaUpdateWrapper.eq(User::getUsername,userPasswordDTO.getUsername())
+//                                .set(User::getPassword,userPasswordDTO.getNewPassword());
+
+//            UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
+//            updateWrapper.eq("username", "admin")
+//                         .set("password", userPasswordDTO.getNewPassword());
+            rows = userMapper.updateById(user);
+//            int rows = userMapper.update(null, updateWrapper);
+//            update = userMapper.updatePassword(userPasswordDTO);
+        }
+
+        if (rows < 1) {
             throw new ServiceException(Constants.CODE_600, "密码错误");
         }
     }
@@ -95,12 +153,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
      * @return
      */
     private User getUserInfo(UserDTO userDTO){
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", userDTO.getUsername());
-        queryWrapper.eq("password", userDTO.getPassword());
+//        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, userDTO.getUsername());
+//        wrapper.eq(User::getPassword, userDTO.getPassword());
         User one;
         try {
-            one = getOne(queryWrapper); //查询数据库信息
+            one = getOne(wrapper); //查询数据库信息
+            if(one != null && !passwordEncoder.matches(userDTO.getPassword(),one.getPassword())){
+                return null;
+            }
         } catch (Exception e) {
             LOG.error(e);
             throw  new ServiceException(Constants.CODE_500,"系统错误");

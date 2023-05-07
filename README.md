@@ -3,7 +3,7 @@
 ├── src                         # 源代码目录
 │   ├── main                    # 主程序目录
 │   │   ├── java                # Java代码目录
-│   │   │   ├───common     			# 通用类目录
+│   │   │   ├───common     		# 通用类目录
 │   │   │   ├── config          # 应用配置类目录
 │   │   │   ├── controller      # 控制器目录
 │   │   │   ├── entity          # 实体类目录

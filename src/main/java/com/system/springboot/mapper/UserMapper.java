@@ -18,7 +18,10 @@ public interface UserMapper extends BaseMapper<User> {
 
 
     //获取未签到学生表
-    List<User> getStuExportList(@Param("is_fever") Boolean is_fever);
+    List<User> getStuExportList();
+
+    @Select("select nickname from sys_user where username=#{username}")
+    String findByUsername(@Param("username") String username);
     /*
     //查找所有数据
     @Select("select * from stu_user")

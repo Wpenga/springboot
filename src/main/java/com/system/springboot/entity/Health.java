@@ -47,7 +47,7 @@ public class Health implements Serializable {
       private Boolean goRisk;
 
       @ApiModelProperty("疫苗针数")
-      private String vaccineCount;
+      private Integer vaccineCount;
 
 //      @TableField(value="punch_date")
       @ApiModelProperty("打卡时间")
@@ -56,5 +56,6 @@ public class Health implements Serializable {
 
       @TableField(exist = false)
       private String nickname;
+
 
 }

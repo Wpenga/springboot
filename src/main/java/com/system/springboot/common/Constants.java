@@ -8,6 +8,7 @@ public interface Constants {
     String CODE_404 = "404"; //资源不存在
     String CODE_500 = "500"; //系统出错
     String CODE_600 = "600"; //其他业务异常
+    String CODE_700 = "700"; //账号不存在
 
     String DICT_TYPE_ICON = "icon";
 

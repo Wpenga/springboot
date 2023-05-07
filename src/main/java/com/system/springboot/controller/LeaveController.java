@@ -1,5 +1,6 @@
 package com.system.springboot.controller;
 
+import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.system.springboot.service.ILeaveService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author 吴泽鹏
  * @since 2023-04-18
  */
+@Api(tags = "请假表操作")
 @RestController
 @RequestMapping("/leave")
 public class LeaveController {

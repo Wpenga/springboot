@@ -11,6 +11,7 @@ import com.system.springboot.entity.Files;
 import com.system.springboot.mapper.FileMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,11 +22,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * 文件上传相关接口
- */
+
 @Api(tags = "文件类操作")
 @RestController
 @RequestMapping("file")
@@ -36,57 +37,59 @@ public class FileController {
 
     @Value("${server.ip}")
     private String serverIp;
-
+    @Value("${server.port}")
+    private String port;
     @Resource
     private FileMapper fileMapper;
 
     @ApiOperation("文件上传")
     @PostMapping("upload")
-    public String upload(@RequestParam MultipartFile file) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        String type = FileUtil.extName(originalFilename);
-        long size = file.getSize();
-        //定义一个文件的唯一标识码
-        String uuid= IdUtil.fastSimpleUUID();
-        String fileUUID = uuid + StrUtil.DOT + type;
+    public Result upload(@RequestParam MultipartFile file) throws IOException {
+        String originalFilename = file.getOriginalFilename(); //文件名
+        String type = FileUtil.extName(originalFilename);//获取文件类型
+        long size = file.getSize();         //获取文件大小
 
-        File uploadFile = new File(fileUploadPath +fileUUID);
+        String uuid= IdUtil.fastSimpleUUID(); //生成一个随机UUID
+        String fileUUID = uuid + StrUtil.DOT + type; //组成文件名abc.jpg
 
-        // 判断配置的文件目录是否存在，若不存在则创建一个新的文件目录
+        File uploadFile = new File(fileUploadPath +fileUUID); //新建文件
+
+        // 新建存储文件目录，若不存在则新建
         File parentFile = uploadFile.getParentFile();
         if(!parentFile.exists()) {
             parentFile.mkdirs();
         }
-
+//        file.transferTo(uploadFile);
         //获取文件的url
         String url;
-        //获取文件存储到磁盘目录
-        file.transferTo(uploadFile);
         //获取文件md5，通过判断md5是否存在避免重复上传相同内容的文件
-        String md5 = SecureUtil.md5(uploadFile);
+        String md5 = SecureUtil.md5(file.getInputStream());
+
+        //获取文件记录
         Files dbFiles = getFileByMd5(md5);
-
-
         if(dbFiles != null){
-            url = dbFiles.getUrl();
-            //文件存在，则删除，避免重复上传
-            uploadFile.delete();
+            url = dbFiles.getUrl(); //获取文件访问地址
         }else {
-//            //获取文件存储到磁盘目录
-//            file.transferTo(uploadFile);
-            url = "http://"+ serverIp + ":8090/file/"+fileUUID;
+            // 获取文件存储到磁盘目录
+            file.transferTo(uploadFile);
+            // 文件的访问地址
+            url = "http://"+ serverIp + ":"+ port + "/file/"+fileUUID;
         }
 
-        //存储数据库
+        // 存储数据库
         Files saveFile = new Files();
         saveFile.setName(originalFilename);
         saveFile.setType(type);
-        saveFile.setSize(size/1024);
+        saveFile.setSize(size/1024); //文件大小单位kb
         saveFile.setUrl(url);
         saveFile.setMd5(md5);
+        // 插入文件信息
         fileMapper.insert(saveFile);
 //        flushRedis(Constants.FILES_KEY);
-        return url;
+        Map<String, String> urlMap = new HashMap<>();
+        urlMap.put("url", url);
+        return Result.success(urlMap);
+//        return Result.success(url);
     }
 
     @ApiOperation("文件下载")
@@ -105,6 +108,7 @@ public class FileController {
         os.close();
     }
 
+
     /**
      * 通过文件md5查询文件
      * @param md5
@@ -114,17 +118,20 @@ public class FileController {
         //查询文件的md5是否已存在
         QueryWrapper<Files> queryWrapper = new QueryWrapper();
         queryWrapper.eq("md5",md5);
-        return fileMapper.selectOne(queryWrapper);
+        List<Files> FilesList = fileMapper.selectList(queryWrapper);
+        return FilesList.size() ==0 ? null : FilesList.get(0);  //只返回一个文件记录
     }
 
     @PostMapping("/update")
-    public Result update(@RequestBody Files files) {
-        fileMapper.updateById(files);
+    @ApiOperation("更新文件记录信息")
+    public Result update(@RequestBody Files Files) {
+        fileMapper.updateById(Files);
 //        flushRedis(Constants.FILES_KEY);
         return Result.success();
     }
 
     @GetMapping("/detail/{id}")
+    @ApiOperation("获取文件信息")
     public Result getById(@PathVariable Integer id) {
         return Result.success(fileMapper.selectById(id));
     }
@@ -132,15 +139,17 @@ public class FileController {
     //清除一条缓存，key为要清空的数据
 //    @CacheEvict(value="files",key="'frontAll'")
     @DeleteMapping("/{id}")
+    @ApiOperation("删除文件记录")
     public Result delete(@PathVariable Integer id) {
-        Files files = fileMapper.selectById(id);
-        files.setIsDelete(true);
-        fileMapper.updateById(files);
+        Files Files = fileMapper.selectById(id);
+        Files.setIsDelete(true);
+        fileMapper.updateById(Files);
 //        flushRedis(Constants.FILES_KEY);
         return Result.success();
     }
 
     @PostMapping("/del/batch")
+    @ApiOperation("批量删除文件记录")
     public Result deleteBatch(@RequestBody List<Integer> ids) {
         // select * from sys_file where id in (id,id,id...)
         QueryWrapper<Files> queryWrapper = new QueryWrapper<>();
@@ -161,6 +170,7 @@ public class FileController {
      * @return
      */
     @GetMapping("/page")
+    @ApiOperation("分页查询")
     public Result findPage(@RequestParam Integer pageNum,
                            @RequestParam Integer pageSize,
                            @RequestParam(defaultValue = "") String name) {
@@ -168,10 +178,11 @@ public class FileController {
         QueryWrapper<Files> queryWrapper = new QueryWrapper<>();
         // 查询未删除的记录
         queryWrapper.eq("is_delete", false);
-        queryWrapper.orderByDesc("id");
-        if (!"".equals(name)) {
-            queryWrapper.like("name", name);
-        }
+//        queryWrapper.orderByDesc("id");
+//        if (!"".equals(name)) {
+//            queryWrapper.like("name", name);
+//        }
+        queryWrapper.like(Strings.isNotEmpty(name),"name",name);
         return Result.success(fileMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper));
     }
 }

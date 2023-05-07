@@ -44,7 +44,9 @@ public class Leave implements Serializable {
       @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone="GMT+8")
       private LocalDateTime endTime;
 
-      @ApiModelProperty("请假原因")
+      @ApiModelProperty("请假类型")
+      private String type;
+      @ApiModelProperty("详细原因")
       private String reason;
 
       @ApiModelProperty("审批状态（0:未批准，1:已批准，2:已驳回）")

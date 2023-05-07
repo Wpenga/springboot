@@ -1,12 +1,16 @@
 package com.system.springboot.controller;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.system.springboot.common.RoleEnum;
+import com.system.springboot.config.PasswordSecurity;
 import com.system.springboot.controller.dto.UserPasswordDTO;
 import com.system.springboot.service.IUserService;
 import com.system.springboot.common.Constants;
@@ -15,8 +19,11 @@ import com.system.springboot.controller.dto.UserDTO;
 import com.system.springboot.entity.User;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.models.auth.In;
 import lombok.ToString;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +33,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 //标识为接口
@@ -37,6 +46,8 @@ import java.util.List;
 public class UserController {
     @Resource
     private IUserService userService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @PostMapping("/login")
     @ApiOperation("登录请求")
     public Result login(@RequestBody UserDTO userDTO){
@@ -63,6 +74,8 @@ public class UserController {
     @PostMapping("/password")
     @ApiOperation("修改密码")
     public Result password(@RequestBody UserPasswordDTO userPasswordDTO) {
+//        userPasswordDTO.setPassword(SecureUtil.md5(userPasswordDTO.getPassword()));
+//        userPasswordDTO.setNewPassword(SecureUtil.md5(userPasswordDTO.getNewPassword()));
         userService.updatePassword(userPasswordDTO);
         return Result.success();
     }
@@ -71,10 +84,22 @@ public class UserController {
     //新增或修改 @RequestBody将前台的数据映射成User对象
     @PostMapping
     public  Result save(@RequestBody User user){
+        if (user.getId() == null && user.getPassword() == null) {  // 设置用户默认密码
+            System.out.println("执行标志"+user.getPassword());
+//            user.setPassword( SecureUtil.md5("123456"));
+            user.setPassword(passwordEncoder.encode("123456"));
+        }else if(user.getId() == null){
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+//            user.setPassword( SecureUtil.md5(user.getPassword()));
+        }
         return Result.success(userService.saveOrUpdate(user));
     }
 
-    //删除数据 @PathVariable表述请求地址必须是（/{id}）
+    @PutMapping
+    @ApiOperation("更新数据")
+    public Result update(@RequestBody User user){
+        return   Result.success(userService.updateById(user));
+    }
     @DeleteMapping("/{id}")
     @ApiOperation("删除")
     public Result delete(@PathVariable Integer id){
@@ -101,6 +126,11 @@ public class UserController {
     public Result findOne(@PathVariable String username){
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username",username);
+//        User user = userService.getOne(
+//                Wrappers.<User>lambdaQuery()
+//                    .eq(User::getUsername,username)
+//        );
+//        return  Result.success(user);
         return  Result.success(userService.getOne(queryWrapper));
     }
 
@@ -108,8 +138,6 @@ public class UserController {
     @GetMapping
     @ApiOperation(value = "获取所有数据")
     public Result findAll(){
-//        List<User> all = userMapper.selectList(null);
-//        return userService.list();
         return Result.success(userService.list());
     }
     //分页查询
@@ -117,17 +145,6 @@ public class UserController {
     // @RequestParam 接受 pageNum=1&pageSize=10
     @GetMapping("/page")
     @ApiOperation("分页/模糊查询")
-/*    public IPage<User> findPage(@RequestParam Integer pageNum,
-                                @RequestParam Integer pageSize,
-                                @RequestParam String username){
-        pageNum = (pageNum - 1 ) * pageSize;
-        List<User> data = userMapper.selectPage(pageNum, pageSize, username);
-        Integer total = userMapper.selectTotal(username );
-        //封装 key-value
-        Map<String, Object> res = new HashMap<>();
-        res.put("data",data);
-        res.put("total",total);
-        return res;*/
     public Result findPage(@RequestParam Integer pageNum,
                                 @RequestParam Integer pageSize,
                                 @RequestParam(defaultValue = "") String role,
@@ -139,9 +156,8 @@ public class UserController {
     ){
         // MyBatis Plus
 //        IPage<User> page = new Page<>(pageNum, pageSize);
-////
 //        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-////      //多条件模糊查询
+          //多条件模糊查询
 //        queryWrapper.like(Strings.isNotEmpty(username),"username",username);
 //        queryWrapper.like(Strings.isNotEmpty(nickname),"nickname",nickname);
 //        queryWrapper.like(Strings.isNotEmpty(address),"address",address);
@@ -170,7 +186,10 @@ public class UserController {
         //设置浏览器响应的格式
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
         //文件名
-        String fileName = URLEncoder.encode("用户信息","UTF-8");
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = sdf.format(date);
+        String fileName = URLEncoder.encode("用户信息 "+formattedDate,"UTF-8");
         response.setHeader("Content-Disposition","attachment;filename="+fileName+".xlsx");
         //输出流
         ServletOutputStream out = response.getOutputStream();
@@ -181,6 +200,7 @@ public class UserController {
     }
     //导入
     @PostMapping("/import")
+    @ApiOperation("导出")
     public Result imp(MultipartFile file) throws Exception{
         //获取输入流
         InputStream inputStream = file.getInputStream();

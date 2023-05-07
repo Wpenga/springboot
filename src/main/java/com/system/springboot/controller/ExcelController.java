@@ -1,8 +1,10 @@
 package com.system.springboot.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.system.springboot.common.Result;
 import com.system.springboot.entity.User;
 import com.system.springboot.mapper.UserMapper;
@@ -19,9 +21,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
+import java.sql.Wrapper;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/excel")
@@ -35,26 +41,37 @@ public class ExcelController {
     @GetMapping("/notfever")
     @ApiOperation("下载用户表")
     public void export(HttpServletResponse response) throws Exception{
-        List<User> list =userMapper.getStuExportList(false);//发烧
+        List<User> list = userMapper.getStuExportList();//发烧
         // 通过工具类创建writer
         ExcelWriter writer = ExcelUtil.getWriter(true);
-
+        List<Map<String, Object>> data = list.stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("username", user.getUsername());
+            map.put("nickname", user.getNickname());
+            map.put("phone", user.getPhone());
+            map.put("sex", user.getSex());
+            map.put("address", user.getAddress());
+            map.put("email", user.getEmail());
+            map.put("isFever", user.getIsFever());
+            map.put("punchDate", user.getPunchDate());
+            return map;
+        }).collect(Collectors.toList());
         //自定义标题别名
         writer.addHeaderAlias("username", "用户名");
         writer.addHeaderAlias("nickname", "姓名");
         writer.addHeaderAlias("phone", "手机号");
-        writer.addHeaderAlias("email", "邮箱");
         writer.addHeaderAlias("sex", "性别");
         writer.addHeaderAlias("address", "地址");
+        writer.addHeaderAlias("email", "邮箱");
         writer.addHeaderAlias("isFever", "发烧情况");
         writer.addHeaderAlias("punchDate", "签到时间");
-
+//        System.out.println("全部"+data);
 
         // 一次性写出内容，使用默认样式，强制输出标题
         Field[] fields = list.get(0).getClass().getDeclaredFields(); // 获取 User 类中所有的成员变量
         int count = fields.length; // 获取成员变量数量
-        writer.merge(count-1, "学生情况表");   //标题位置
-        writer.write(list, true);
+        writer.merge(data.get(0).size()-1, "学生情况表");   //标题位置
+        writer.write(data, true);
 
         //设置浏览器响应的格式
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
@@ -73,6 +90,7 @@ public class ExcelController {
     }
     //导入
     @PostMapping("/import")
+    @ApiOperation("导入用户表")
     public Result imp(MultipartFile file) throws Exception{
         //获取输入流
         InputStream inputStream = file.getInputStream();

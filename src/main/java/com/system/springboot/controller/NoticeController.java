@@ -3,7 +3,9 @@ package com.system.springboot.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.system.springboot.common.Constants;
 import com.system.springboot.common.Result;
+import com.system.springboot.common.RoleEnum;
 import com.system.springboot.entity.Notice;
 import com.system.springboot.service.INoticeService;
 import io.swagger.annotations.Api;
@@ -21,6 +23,9 @@ import java.util.List;
  *
  * @author 吴泽鹏
  * @since 2023-04-12
+ */
+/*
+ *   通知类操作
  */
 @RestController
 @RequestMapping("/notice")
@@ -84,9 +89,10 @@ public class NoticeController {
 
     @ApiOperation("获取发布的通知")
     @GetMapping("/open")
-    public Result getOpen(){
+    public Result getOpen(@RequestParam(defaultValue = "") String username){
         QueryWrapper<Notice> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in("status","1");
+        queryWrapper.eq("status","1");
+//        queryWrapper.eq(Strings.isNotEmpty(username),"receiver",username);
         return Result.success(noticeService.list(queryWrapper));
     }
 }

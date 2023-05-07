@@ -1,12 +1,16 @@
 package com.system.springboot.controller;
 
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.system.springboot.common.Constants;
 import com.system.springboot.common.Result;
 import com.system.springboot.entity.Health;
 import com.system.springboot.mapper.HealthMapper;
 import com.system.springboot.service.IHealthService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +28,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/health")
+@Api(tags = "健康表操作")
 public class HealthController {
     @Resource
     private IHealthService healthService;
@@ -38,8 +43,13 @@ public class HealthController {
     //新增或修改 @RequestBody将前台的数据映射成User对象
     @PostMapping
     public  Result save(@RequestBody Health health){
-        System.out.println("前端时间："+health.getPunchDate());
-        return Result.success(healthService.save(health));
+//        DateTime currentDate  = new DateTime();
+//        // 比较当前日期与打卡日期是否一致
+//        if (DateUtil.isSameDay(currentDate, health.getPunchDate())) {
+            return Result.success(healthService.save(health));
+//        }else {
+//            return Result.error(Constants.CODE_600,"当天已提交，无需重复提交");
+//        }
     }
     @PutMapping
     @ApiOperation(value = "更新数据",notes = "根据id实现数据的更新")
@@ -87,8 +97,12 @@ public class HealthController {
     @GetMapping("/username/{username}")
     @ApiOperation(value = "根据用户名获取数据")
     public Result findOne(@PathVariable String username){
-        Health health = healthMapper.getHealthByUser(username);
-        System.out.println("时间："+health.getPunchDate());
         return  Result.success(healthMapper.getHealthByUser(username));
+    }
+    //查询单个数据 根据用户名
+    @GetMapping("/username1/{username}")
+    @ApiOperation(value = "根据用户名获取昵称")
+    public Result findHealthAndNickname(@PathVariable String username){
+        return  Result.success(healthMapper.findHealthAndNickname(username));
     }
 }

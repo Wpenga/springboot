@@ -87,7 +87,7 @@
 --         GROUP BY u.username, h.username
         ORDER BY u.id
     </select>
-<!-- 导出 学生数据表-->
+<!--  学生打卡数据表-->
     <select id="getStuExportList" resultType="com.system.springboot.entity.User">
         SELECT u.username,u.nickname,u.phone,u.sex,u.address,u.email, h.is_fever, h.punch_date
         FROM sys_user u
@@ -101,9 +101,9 @@
             )
         ) h ON u.username = h.username
         <where>
-            <if test = "is_fever != null and is_fever !=''">
-                and h.is_fever = #{is_fever}
-            </if>
+<!--            <if test = "is_fever = FALSE">-->
+                and h.is_fever = FALSE OR is_fever IS NULL
+<!--            </if>-->
 <!--            <if test = "username != null and username !=''">-->
 <!--                and h.punch_date = #{punch_date},'%')-->
 <!--            </if>-->

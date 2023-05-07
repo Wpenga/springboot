@@ -11,7 +11,9 @@ import com.system.springboot.mapper.HealthMapper;
 import com.system.springboot.service.IHealthService;
 import com.system.springboot.service.IUserService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,19 +32,19 @@ public class EchartsController {
 
     @Resource
     private HealthMapper healthMapper;
-    @Autowired
+    @Resource
     private IUserService userService;
-    @Autowired
+    @Resource
     private IHealthService healthService;
-    @GetMapping("/example")
-    public Result get(){
-        Map<String, Object>  map = new HashMap<>();
-        map.put("x", CollUtil.newArrayList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"));
-        map.put("y",CollUtil.newArrayList(150, 230, 224, 218, 135, 147, 260));
-        return Result.success(map);
-    }
-    //获取统计数据
+//    @GetMapping("/example")
+//    public Result get(){
+//        Map<String, Object>  map = new HashMap<>();
+//        map.put("x", CollUtil.newArrayList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"));
+//        map.put("y",CollUtil.newArrayList(150, 230, 224, 218, 135, 147, 260));
+//        return Result.success(map);
+//    }
     @GetMapping("/getdata")
+    @ApiOperation("获取统计数据")
     public Result getdata(){
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("role","ROLE_STUDENT");
@@ -67,8 +69,9 @@ public class EchartsController {
         map.put("isFeverCount", isFeverCount);
         return Result.success(map);
     }
-//    @GetMapping("members")
-    @GetMapping("members")
+
+    @ApiOperation("打卡时间分布")
+    @GetMapping("timeCounts")
     public  Result members(){
         //获取打卡表信息
 //        QueryWrapper<Health> queryWrapper = new QueryWrapper<>();

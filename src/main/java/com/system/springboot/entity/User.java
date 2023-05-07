@@ -34,7 +34,7 @@ public class User {
     @Alias("用户名")           //HuTool提供的别名注解工具
     private String username;
 
-    @JsonIgnore
+//    @JsonIgnore  //忽略
     @ApiModelProperty("密码")
     @Alias("密码")
     private String password;

@@ -6,6 +6,8 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.system.springboot.config.AuthAccess;
 import com.system.springboot.service.IUserService;
 import com.system.springboot.common.Constants;
 import com.system.springboot.entity.User;
@@ -31,9 +33,16 @@ public class Jwtlnterceptor  implements HandlerInterceptor {
         // 如果不是映射到方法直接通过
         if(!(handler instanceof HandlerMethod)){
             return true;
+        } else {
+            HandlerMethod h = (HandlerMethod) handler;
+            AuthAccess authAccess = h.getMethodAnnotation(AuthAccess.class);
+            if (authAccess != null) {
+                return true;
+            }
         }
         //执行认证
         if(StrUtil.isBlank(token)){
+//            return true;
             throw new ServiceException(Constants.CODE_401,"无Token，请重新登录");
         }
         // 获取 token 中的 user id
@@ -51,9 +60,14 @@ public class Jwtlnterceptor  implements HandlerInterceptor {
         JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
         try {
             jwtVerifier.verify(token);
-        } catch (JWTVerificationException e) {
+        }
+        catch (TokenExpiredException e){  //过期异常
+            throw new ServiceException(Constants.CODE_401,"token过期");
+        }
+        catch (JWTVerificationException e) {
             throw new RuntimeException("401");
         }
+
         return true;
     }
 }

@@ -85,6 +85,7 @@ public class MenuController {
     }
 
     @GetMapping("/icons")
+    @ApiOperation("获取图标信息")
     public Result getIcons(){
         QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("type", Constants.DICT_TYPE_ICON);
