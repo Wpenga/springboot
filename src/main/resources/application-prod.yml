@@ -1,7 +1,7 @@
 server:
-  ip: localhost
+  ip: 101.35.79.108
   port: 8090                     #后端端口
-  frontendAddress: "localhost:8080"  #前端地址
+  frontendAddress: "101.35.79.108:8088"  #前端地址
 
 spring:
   application:
@@ -19,9 +19,9 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/mydb?serverTimezone=Asia/Shanghai
-#    GMT%2b8
-    username: root
-    password: ''
+    #    GMT%2b8
+    username: wpeng
+    password: 'wpeng'
   #缓存数据库
   redis:
     host: localhost
@@ -30,7 +30,7 @@ spring:
     pathmatch:
       #swagger配置
       matching-strategy: ANT_PATH_MATCHER
-#    type: com.alibaba.druid.pool.DruidDataSource
+  #    type: com.alibaba.druid.pool.DruidDataSource
   #文件大小
   servlet:
     multipart:
@@ -47,4 +47,4 @@ mybatis-plus:
 #文件存储路径
 files:
   upload:
-    path: H:/管理系统/files/
+    path: /usr/server/疫情防控后端
