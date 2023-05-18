@@ -65,7 +65,6 @@ public class ExcelController {
         writer.addHeaderAlias("email", "邮箱");
         writer.addHeaderAlias("isFever", "发烧情况");
         writer.addHeaderAlias("punchDate", "签到时间");
-//        System.out.println("全部"+data);
 
         // 一次性写出内容，使用默认样式，强制输出标题
         Field[] fields = list.get(0).getClass().getDeclaredFields(); // 获取 User 类中所有的成员变量

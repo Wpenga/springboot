@@ -1,4 +1,4 @@
-package com.spring.security.config;
+package com.system.springboot.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -51,16 +51,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                //跨域
+                //允许跨域
                 .cors()
                 .and()
                 //关闭csrf
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/user/login/**","/login").permitAll() // 允许匿名访问
+                .antMatchers("/user/login/**","/user/register/**","/login","/file/**").permitAll() // 允许匿名访问
+                .antMatchers("/swagger**/**","/webjars/**","/v3/**","/doc.html").permitAll() //允许访问Swagger API文档
+//                .anyRequest().authenticated();
                 // 只允许 "ROLE_ADMIN" 角色的用户访问 "/api/admin"
                 //.antMatchers("/api/admin").hasRole("ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().authenticated()////其他URL需要进行认证
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS); //每次请求都需要重新进行身份验证
         //配置异常处理器
@@ -69,7 +71,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler);
         //过滤器
-//        http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
     }
 

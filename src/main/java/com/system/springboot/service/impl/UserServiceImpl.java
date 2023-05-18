@@ -55,8 +55,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
 
     @Override
     public UserDTO login(UserDTO userDTO) {     //登录逻辑判断
-        // 对用户密码进行md5加密
-//        userDTO.setPassword(SecureUtil.md5(userDTO.getPassword()));
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, userDTO.getUsername());
         User isExit = getOne(wrapper);
@@ -84,7 +82,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
 
     @Override
     public User register(UserDTO userDTO) {       //注册逻辑操作
-//        userDTO.setPassword(SecureUtil.md5(userDTO.getPassword()));
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, userDTO.getUsername());
         User one = getOne(wrapper);
@@ -112,29 +109,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         int rows = 0;
         if(user != null && passwordEncoder.matches(userPasswordDTO.getPassword(),user.getPassword())){
             user.setPassword(passwordEncoder.encode(userPasswordDTO.getNewPassword()));
-//            userPasswordDTO.setNewPassword(passwordEncoder.encode(userPasswordDTO.getNewPassword()));
-//            System.out.println(userPasswordDTO.getNewPassword());
-            //更新1  Parameter 'username' not found. Available parameters are [ew, param1, et, param2]
-//            boolean row = new LambdaUpdateChainWrapper<User>(userMapper)
-//                    .eq(User::getUsername,userPasswordDTO.getUsername())
-//                    .set(User::getPassword,userPasswordDTO.getNewPassword())
-//                    .update();
-            //更新2
-//            update(
-//                Wrappers.<User>lambdaUpdate()
-//                    .eq(User::getUsername,userPasswordDTO.getUsername())
-//                    .set(User::getPassword,userPasswordDTO.getNewPassword())
-//            );
-//            LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-//            lambdaUpdateWrapper.eq(User::getUsername,userPasswordDTO.getUsername())
-//                                .set(User::getPassword,userPasswordDTO.getNewPassword());
-
-//            UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
-//            updateWrapper.eq("username", "admin")
-//                         .set("password", userPasswordDTO.getNewPassword());
             rows = userMapper.updateById(user);
-//            int rows = userMapper.update(null, updateWrapper);
-//            update = userMapper.updatePassword(userPasswordDTO);
         }
 
         if (rows < 1) {
@@ -198,24 +173,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         return roleMenus;
     }
 }
-   /* @Autowired
-    private UserMapper userMapper;
-      MyBatis
-    public  int save(User user){
-        if(user.getId() == null){   //判断新增还是更新
-            return userMapper.insert(user);
-        }
-        else {  //更新
-            return userMapper.update(user);
-        }
-    }*/
-    //MyBatis Plus
-    /*public  boolean saveUser(User user){
-        if(user.getId() == null){   //判断新增还是更新
-            return save(user);
-        }
-        else {  //更新
-            return updateById(user);
-        }
-        return saveOrUpdate(user);
-    }*/

@@ -56,6 +56,4 @@ public class Notice implements Serializable {
 
       @ApiModelProperty("接收对象")
       private String receiver;
-
-
 }

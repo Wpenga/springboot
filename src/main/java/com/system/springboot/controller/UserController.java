@@ -1,17 +1,22 @@
 package com.system.springboot.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.system.springboot.common.RoleEnum;
-import com.system.springboot.config.PasswordSecurity;
+//import com.system.springboot.config.PasswordSecurity;
 import com.system.springboot.controller.dto.UserPasswordDTO;
+import com.system.springboot.entity.Menu;
+import com.system.springboot.exception.ServiceException;
 import com.system.springboot.service.IUserService;
 import com.system.springboot.common.Constants;
 import com.system.springboot.common.Result;
@@ -23,6 +28,7 @@ import io.swagger.models.auth.In;
 import lombok.ToString;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,8 +40,8 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 //标识为接口
 @RestController
@@ -48,7 +54,7 @@ public class UserController {
     private IUserService userService;
     @Autowired
     private PasswordEncoder passwordEncoder;
-    @PostMapping("/login")
+    @PostMapping("/login2")
     @ApiOperation("登录请求")
     public Result login(@RequestBody UserDTO userDTO){
         String username = userDTO.getUsername();
@@ -74,8 +80,6 @@ public class UserController {
     @PostMapping("/password")
     @ApiOperation("修改密码")
     public Result password(@RequestBody UserPasswordDTO userPasswordDTO) {
-//        userPasswordDTO.setPassword(SecureUtil.md5(userPasswordDTO.getPassword()));
-//        userPasswordDTO.setNewPassword(SecureUtil.md5(userPasswordDTO.getNewPassword()));
         userService.updatePassword(userPasswordDTO);
         return Result.success();
     }
@@ -86,11 +90,9 @@ public class UserController {
     public  Result save(@RequestBody User user){
         if (user.getId() == null && user.getPassword() == null) {  // 设置用户默认密码
             System.out.println("执行标志"+user.getPassword());
-//            user.setPassword( SecureUtil.md5("123456"));
             user.setPassword(passwordEncoder.encode("123456"));
         }else if(user.getId() == null){
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-//            user.setPassword( SecureUtil.md5(user.getPassword()));
         }
         return Result.success(userService.saveOrUpdate(user));
     }
@@ -100,17 +102,24 @@ public class UserController {
     public Result update(@RequestBody User user){
         return   Result.success(userService.updateById(user));
     }
+    @PutMapping("/setpassword")
+    @ApiOperation("设置密码")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result setPassword(@RequestBody User user){
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return   Result.success(userService.updateById(user));
+    }
     @DeleteMapping("/{id}")
     @ApiOperation("删除")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result delete(@PathVariable Integer id){
         return Result.success(userService.removeById(id));
-                //userMapper.deleteById(id);
     }
     @PostMapping("/del/batch")
     @ApiOperation("批量删除")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result deleteBatch(@RequestBody List<Integer> ids){
         return Result.success(userService.removeByIds(ids));
-        //userMapper.deleteById(id);
     }
 
     //查询单个数据 根据id
@@ -120,6 +129,21 @@ public class UserController {
         return Result.success(userService.getById(id));
     }
 
+    @GetMapping("/ids")
+    @ApiOperation("学号-姓名")
+    public Result findAllUsernameAndNickname() {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getRole,RoleEnum.ROLE_STUDENT.toString());
+        List<Map<String, Object>> jsonArray = userService.list(wrapper).stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("username", user.getUsername());
+            map.put("nickname", user.getNickname());
+            return map;
+        }).collect(Collectors.toList());
+
+//        String jsonStr = JSONObject.toJSONString(jsonArray);
+        return Result.success(jsonArray);
+    }
     //查询单个数据 根据用户名
     @GetMapping("/username/{username}")
     @ApiOperation(value = "根据用户名获取数据")
@@ -165,10 +189,10 @@ public class UserController {
 //        queryWrapper.like(Strings.isNotEmpty(phone),"phone",phone);
 //        queryWrapper.orderByDesc("id");
         return  Result.success(userService.findPage(new Page<>(pageNum, pageSize),role,username,address,nickname,email,phone));
-//        return  Result.success(userService.page(page,queryWrapper));
     }
 
     //导出
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     @GetMapping("/export")
     @ApiOperation("下载")
     public void export(HttpServletResponse response) throws Exception{
@@ -199,18 +223,53 @@ public class UserController {
         writer.close();
     }
     //导入
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     @PostMapping("/import")
-    @ApiOperation("导出")
-    public Result imp(MultipartFile file) throws Exception{
+    @ApiOperation("导入")
+    public Result imp(@RequestParam MultipartFile file) throws Exception{
         //获取输入流
         InputStream inputStream = file.getInputStream();
         //通过插件提供的方法读取输入流
         ExcelReader reader = ExcelUtil.getReader(inputStream);
         //读取的类型为泛型User
-        List<User> list = reader.readAll(User.class);
+//        List<User> list = reader.readAll(User.class); //实体名必须一致
+//        System.out.println("数据"+list);
+
+        // 方式2：忽略表头的中文，直接读取表的内容
+        List<List<Object>> list = reader.read(2);
+        List<User> users = CollUtil.newArrayList();
+        List<String> usernameList = userService.list()
+                .stream()
+                .map(User::getUsername)
+                .collect(Collectors.toList());
+
+        System.out.println(usernameList);
+        for (List<Object> row : list) {
+            if (Strings.isNotEmpty(row.get(0).toString())  && !usernameList.contains(row.get(0).toString())) { // 添加判断
+                User user = new User();
+                user.setUsername(row.get(0).toString());
+                user.setNickname(row.get(1).toString());
+                user.setPassword(passwordEncoder.encode("123456"));
+//                user.setEmail(row.get(3).toString());
+//            user.setPhone(row.get(4).toString());
+//            user.setAddress(row.get(5).toString());
+//            user.setAvatarUrl(row.get(6).toString());
+                users.add(user);
+            }
+        }
         //数据批量保存到数据库
-        userService.saveBatch(list);
-        System.out.println(list);
-        return Result.success(true);
+        try {
+            if (users.size()>0){
+                boolean flag = userService.saveBatch(users);
+                return Result.success(flag);
+            }else {
+                return  Result.error("404","上传失败");
+            }
+        }
+        catch (Exception e){  //过期异常
+            throw new ServiceException(Constants.CODE_500,"导入失败");
+        }
+
+
     }
 }

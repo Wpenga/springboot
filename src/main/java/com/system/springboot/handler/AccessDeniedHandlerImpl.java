@@ -1,8 +1,8 @@
 package com.system.springboot.handler;
 
 import com.alibaba.fastjson.JSON;
-import com.springboot.common.ResponseResult;
-import com.spring.security.utils.WebUtils;
+import com.system.springboot.common.ResponseResult;
+import com.system.springboot.utils.WebUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;

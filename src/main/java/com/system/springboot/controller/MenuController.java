@@ -11,6 +11,7 @@ import com.system.springboot.mapper.DictMapper;
 import com.system.springboot.service.IMenuService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -26,6 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/menu")
+@PreAuthorize("hasRole('ADMIN')")   //管理员权限
 @Api(tags = "菜单类操作")
 public class MenuController {
     @Resource
@@ -64,7 +66,7 @@ public class MenuController {
     }
 
     //查询单个数据
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     @ApiOperation(value = "获取单个数据")
     public Result findAll(@PathVariable Integer id){
         return Result.success(menuService.getById(id));

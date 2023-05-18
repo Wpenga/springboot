@@ -1,73 +1,73 @@
-package com.system.springboot.common.interceptor;
-
-import cn.hutool.core.util.StrUtil;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.system.springboot.config.AuthAccess;
-import com.system.springboot.service.IUserService;
-import com.system.springboot.common.Constants;
-import com.system.springboot.entity.User;
-import com.system.springboot.exception.ServiceException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.HandlerInterceptor;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-/**
- * 拦截器拦截token
- */
-public class Jwtlnterceptor  implements HandlerInterceptor {
-    @Autowired
-    private IUserService userService;
-
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        //System.out.println("请求链接："+request.getRequestURI());
-        //获取token
-        String token = request.getHeader("token");
-        // 如果不是映射到方法直接通过
-        if(!(handler instanceof HandlerMethod)){
-            return true;
-        } else {
-            HandlerMethod h = (HandlerMethod) handler;
-            AuthAccess authAccess = h.getMethodAnnotation(AuthAccess.class);
-            if (authAccess != null) {
-                return true;
-            }
-        }
-        //执行认证
-        if(StrUtil.isBlank(token)){
+//package com.system.springboot.common.interceptor;
+//
+//import cn.hutool.core.util.StrUtil;
+//import com.auth0.jwt.JWT;
+//import com.auth0.jwt.JWTVerifier;
+//import com.auth0.jwt.algorithms.Algorithm;
+//import com.auth0.jwt.exceptions.JWTDecodeException;
+//import com.auth0.jwt.exceptions.JWTVerificationException;
+//import com.auth0.jwt.exceptions.TokenExpiredException;
+//import com.system.springboot.config.AuthAccess;
+//import com.system.springboot.service.IUserService;
+//import com.system.springboot.common.Constants;
+//import com.system.springboot.entity.User;
+//import com.system.springboot.exception.ServiceException;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.web.method.HandlerMethod;
+//import org.springframework.web.servlet.HandlerInterceptor;
+//
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
+///**
+// * 拦截器拦截token
+// */
+//public class Jwtlnterceptor  implements HandlerInterceptor {
+//    @Autowired
+//    private IUserService userService;
+//
+//    @Override
+//    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+//        //System.out.println("请求链接："+request.getRequestURI());
+//        //获取token
+//        String token = request.getHeader("token");
+//        // 如果不是映射到方法直接通过
+//        if(!(handler instanceof HandlerMethod)){
 //            return true;
-            throw new ServiceException(Constants.CODE_401,"无Token，请重新登录");
-        }
-        // 获取 token 中的 user id
-        String userId;
-        try {
-            userId = JWT.decode(token).getAudience().get(0);
-        } catch (JWTDecodeException j) {
-            throw new ServiceException(Constants.CODE_401,"token验证失败");
-        }
-        User user = userService.getById(userId);
-        if (user == null) {
-            throw new ServiceException(Constants.CODE_401,"用户不存在，请重新登录");
-        }
-        // 用户密码加签验证 token
-        JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
-        try {
-            jwtVerifier.verify(token);
-        }
-        catch (TokenExpiredException e){  //过期异常
-            throw new ServiceException(Constants.CODE_401,"token过期");
-        }
-        catch (JWTVerificationException e) {
-            throw new RuntimeException("401");
-        }
-
-        return true;
-    }
-}
+//        } else {
+//            HandlerMethod h = (HandlerMethod) handler;
+//            AuthAccess authAccess = h.getMethodAnnotation(AuthAccess.class);
+//            if (authAccess != null) {
+//                return true;
+//            }
+//        }
+//        //执行认证
+//        if(StrUtil.isBlank(token)){
+////            return true;
+//            throw new ServiceException(Constants.CODE_401,"无Token，请重新登录");
+//        }
+//        // 获取 token 中的 user id
+//        String userId;
+//        try {
+//            userId = JWT.decode(token).getAudience().get(0);
+//        } catch (JWTDecodeException j) {
+//            throw new ServiceException(Constants.CODE_401,"token验证失败");
+//        }
+//        User user = userService.getById(userId);
+//        if (user == null) {
+//            throw new ServiceException(Constants.CODE_401,"用户不存在，请重新登录");
+//        }
+//        // 用户密码加签验证 token
+//        JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
+//        try {
+//            jwtVerifier.verify(token);
+//        }
+//        catch (TokenExpiredException e){  //过期异常
+//            throw new ServiceException(Constants.CODE_401,"token过期");
+//        }
+//        catch (JWTVerificationException e) {
+//            throw new RuntimeException("401");
+//        }
+//
+//        return true;
+//    }
+//}

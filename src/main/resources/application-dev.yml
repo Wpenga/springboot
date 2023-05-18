@@ -1,6 +1,6 @@
 server:
   ip: 101.35.79.108
-  port: 8099                     #后端端口
+  port: 8090                     #后端端口
   frontendAddress: "101.35.79.108:8088"  #前端地址
 
 spring:
@@ -18,10 +18,10 @@ spring:
   # 连接数据库
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/mydb2?serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/mydb?serverTimezone=Asia/Shanghai
     #    GMT%2b8
-    username: mydb2
-    password: 'mydb2'
+    username: wpeng
+    password: 'wpeng'
   #缓存数据库
   redis:
     host: localhost

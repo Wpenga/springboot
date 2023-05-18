@@ -13,6 +13,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.Data;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +25,8 @@ import java.util.List;
 @ApiModel(value = "User对象")
 //@ToString
 
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = -40356785423868312L;
 
     @ApiModelProperty("主键")
     @TableId(value = "id", type = IdType.AUTO)
